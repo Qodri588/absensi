@@ -86,7 +86,7 @@
         function generateMarkdown() {
             const form = document.getElementById('mrForm');
             const formData = new FormData(form);
-            let markdown = `*Hasil Realisasi MR\n\n*Lokasi:* ${formData.get('lokasi')}\n*Tanggal:* ${formData.get('tanggal')}\n\n`;
+            let markdown = `*Hasil Realisasi MR ${formData.get('lokasi')}*\n*Tanggal:* ${formData.get('tanggal')}\n\n`;
 
             const pagiSiangUsers = formData.getAll('pagiSiangContainerUser[]');
             const pagiSiangResults = formData.getAll('pagiSiangContainerResult[]');
