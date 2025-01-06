@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Realisasi MR</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://unpkg.com/daisyui@latest/dist/full.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/pikaday/css/pikaday.css">
+    <style>
+        .form-section {
+            margin-bottom: 1rem;
+        }
+
+        .flex-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+
+        .flex-container > div {
+            flex: 1 1 calc(50% - 1rem);
+        }
+
+        @media (max-width: 768px) {
+            .flex-container > div {
+                flex: 1 1 100%;
+            }
+        }
+
+        .btn-svg {
+            display: inline-flex;
+            align-items: right;
+            justify-content: center;
+            width: 32px;
+            height: 32px;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 p-2 sm:p-4">
+    <div class="max-w-full sm:max-w-4xl mx-auto bg-white p-4 rounded shadow-md">
+        <h1 class="text-lg font-bold mb-4 text-center">Form Hasil Realisasi MR</h1>
+        <form id="realisasiForm" class="space-y-4">
+            <!-- Lokasi -->
+            <div class="grid grid-cols-1 gap-2">
+                <label class="block text-sm font-medium">Lokasi</label>
+                <input type="text" id="lokasi" class="input input-bordered w-full" required>
+            </div>
+
+            <!-- Tanggal -->
+            <div class="grid grid-cols-1 gap-2">
+                <label class="block text-sm font-medium">Tanggal</label>
+                <input type="text" id="tanggal" class="input input-bordered w-full" required>
+            </div>
+
+            <!-- Pagi s/d Siang -->
+            <div class="grid grid-cols-1 gap-2">
+                <label class="block text-sm font-medium">Pagi s/d Siang</label>
+                <div id="pagiSiangContainer" class="space-y-2"></div>
+                <button type="button" onclick="addField('pagiSiangContainer')" class="btn btn-sm w-full">+ Tambah</button>
+            </div>
+
+            <!-- Sore s/d Malam -->
+            <div class="grid grid-cols-1 gap-2">
+                <label class="block text-sm font-medium">Sore s/d Malam</label>
+                <div id="soreMalamContainer" class="space-y-2"></div>
+                <button type="button" onclick="addField('soreMalamContainer')" class="btn btn-sm w-full">+ Tambah</button>
+            </div>
+
+            <button type="button" onclick="generateMarkdown()" class="btn btn-primary w-full">Generate Markdown</button>
+        </form>
+
+        <!-- Output hasil Markdown -->
+        <div id="outputContainer" class="mt-4 hidden bg-gray-50 p-3 rounded shadow-md">
+            <h2 class="text-sm font-bold">Hasil Markdown:</h2>
+            <pre id="outputText" class="mt-2 bg-white p-2 rounded border"></pre>
+            <button onclick="copyToClipboard()" class="btn btn-secondary btn-sm w-full mt-2">Copy to Clipboard</button>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pikaday/1.8.0/pikaday.min.js"></script>
+<script>
+    // Inisialisasi Pikaday
+    const picker = new Pikaday({
+        field: document.getElementById('tanggal'),
+        format: 'DD/MM/YYYY', // Format tanggal yang terlihat di input
+        i18n: {
+            previousMonth: 'Bulan Sebelumnya',
+            nextMonth: 'Bulan Berikutnya',
+            months: ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'],
+            weekdays: ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'],
+            weekdaysShort: ['Min', 'Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab']
+        },
+        firstDay: 1, // Awal pekan Senin
+    });
+
+    // Tambahkan format untuk tanggal jika dibutuhkan
+    function formatDateToDDMMYYYY(dateString) {
+        const date = new Date(dateString); // Ubah string menjadi objek Date
+        const day = String(date.getDate()).padStart(2, '0'); // Tambahkan leading zero
+        const month = String(date.getMonth() + 1).padStart(2, '0'); // Bulan dimulai dari 0
+        const year = date.getFullYear();
+        return `${day}/${month}/${year}`;
+    }
+
+    // Fungsi untuk menambahkan field dinamis
+    function addField(containerId) {
+        const container = document.getElementById(containerId);
+        const div = document.createElement('div');
+        div.className = 'flex flex-col md:flex-row md:items-auto md:space-x-2 mb-2';
+        div.innerHTML = `
+            <input type="text" name="user${containerId}[]" class="input input-bordered w-full md:w-5/12 mb-2 md:mb-0" placeholder="User">
+            <input type="text" name="hasil${containerId}[]" class="input input-bordered w-full md:w-5/12 mb-2 md:mb-0 break-words break-all h-auto" placeholder="Hasil Kunjungan">
+            <button type="button" class="btn bg-red-600 btn-outline" onclick="removeField(this)">- Dellete   User</button>
+        `;
+        container.appendChild(div);
+    }
+
+    // Fungsi untuk menghapus field dinamis
+    function removeField(button) {
+        button.parentElement.remove();
+    }
+
+    // Fungsi untuk membuat Markdown
+    function generateMarkdown() {
+        const lokasi = document.getElementById('lokasi').value || 'Tidak ada lokasi';
+        const rawTanggal = document.getElementById('tanggal').value;
+        const tanggal = formatDateToDDMMYYYY(rawTanggal) || 'Tanggal tidak valid';
+
+        // Data pagi-siang
+        const pagiSiangUsers = document.getElementsByName('userpagiSiangContainer[]');
+        const pagiSiangResults = document.getElementsByName('hasilpagiSiangContainer[]');
+        let pagiSiangText = '';
+        for (let i = 0; i < pagiSiangUsers.length; i++) {
+            pagiSiangText += `- ${pagiSiangUsers[i].value || 'Tidak ada nama'} : ${pagiSiangResults[i].value || 'Tidak ada hasil'}\n`;
+        }
+
+        // Data sore-malam
+        const soreMalamUsers = document.getElementsByName('usersoreMalamContainer[]');
+        const soreMalamResults = document.getElementsByName('hasilsoreMalamContainer[]');
+        let soreMalamText = '';
+        for (let i = 0; i < soreMalamUsers.length; i++) {
+            soreMalamText += `- ${soreMalamUsers[i].value || 'Tidak ada nama'} : ${soreMalamResults[i].value || 'Tidak ada hasil'}\n`;
+        }
+
+        // Markdown akhir
+        const markdown = `
+*Hasil Realisasi MR ${lokasi}*
+*Tanggal ${tanggal}*
+
+*Pagi s/d Siang*
+${pagiSiangText}
+
+*Sore s/d Malam*
+${soreMalamText}`.trim();
+
+        // Tampilkan hasil dan salin ke clipboard
+        document.getElementById('outputText').textContent = markdown;
+        document.getElementById('outputContainer').classList.remove('hidden');
+        navigator.clipboard.writeText(markdown).then(() => {
+            alert('Markdown copied to clipboard!');
+        });
+    }
+
+    // Fungsi untuk menyalin teks ke clipboard
+    function copyToClipboard() {
+        const markdown = document.getElementById('outputText').textContent;
+        navigator.clipboard.writeText(markdown).then(() => {
+            alert('Markdown copied to clipboard!');
+        });
+    }
+</script>
+
+</body>
+</html>
