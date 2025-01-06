@@ -7,38 +7,15 @@
     <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css">
     <link href="https://cdn.jsdelivr.net/npm/daisyui@2.51.5/dist/full.css" rel="stylesheet" type="text/css" />
-   
-   <link rel="stylesheet" type="text/css" href="https://npmcdn.com/flatpickr/dist/themes/dark.css">
-
- <style>
-        body {
-            font-size: 14px;
-        }
-        .input, .btn {
-            font-size: 14px;
-        }
-        pre {
-            white-space: pre-wrap;
-            word-wrap: break-word;
-            font-size: 14px;
-        }
-        .form-item {
-            padding: 5px;
-            border: 1px solid #e5e7eb;
-            border-radius: 8px;
-            margin-bottom: 8px;
-            background-color: #f9fafb;
-        }
-        .form-item:nth-child(odd) {
-            background-color: #e0f7fa;
-        }
-        .form-item:nth-child(even) {
-            background-color: #fff3e0;
-        }
-        input {
-            word-wrap: break-word;
-            overflow-wrap: break-word;
-        }
+    <link rel="stylesheet" type="text/css" href="https://npmcdn.com/flatpickr/dist/themes/dark.css">
+    <style>
+        body { font-size: 14px; }
+        .input, .btn { font-size: 14px; }
+        pre { white-space: pre-wrap; word-wrap: break-word; font-size: 14px; }
+        .form-item { padding: 5px; border: 1px solid #e5e7eb; border-radius: 8px; margin-bottom: 8px; background-color: #f9fafb; }
+        .form-item:nth-child(odd) { background-color: #e0f7fa; }
+        .form-item:nth-child(even) { background-color: #fff3e0; }
+        input { word-wrap: break-word; overflow-wrap: break-word; }
     </style>
 </head>
 <body class="bg-gray-100 p-2 sm:p-4">
@@ -72,7 +49,7 @@
                 <button type="button" onclick="addField('soreMalamContainer')" class="btn btn-outline btn-sm w-full">+ Tambah</button>
             </div>
 
-            <button type="submit" class="btn btn-primary w-full">Submit</button>
+            <button type="button" onclick="generateMarkdown()" class="btn btn-primary w-full">Submit</button>
         </form>
 
         <!-- Output hasil Markdown -->
@@ -85,9 +62,7 @@
 
     <script>
         // Integrasi Flatpickr
-        flatpickr("#tanggal", {
-            dateFormat: "d-m-Y",
-        });
+        flatpickr("#tanggal", { dateFormat: "d-m-Y" });
 
         // Fungsi untuk menambahkan field dinamis
         function addField(containerId) {
@@ -107,24 +82,29 @@
             button.parentElement.remove();
         }
 
-        // Fungsi untuk mengirim data tanpa reload halaman
-        document.getElementById('mrForm').addEventListener('submit', function(event) {
-            event.preventDefault(); // Mencegah reload halaman
+        // Fungsi untuk menghasilkan Markdown
+        function generateMarkdown() {
+            const form = document.getElementById('mrForm');
+            const formData = new FormData(form);
+            let markdown = `### Hasil Realisasi MR\n\n**Lokasi:** ${formData.get('lokasi')}\n**Tanggal:** ${formData.get('tanggal')}\n\n`;
 
-            const formData = new FormData(this);
+            const pagiSiangUsers = formData.getAll('pagiSiangContainerUser[]');
+            const pagiSiangResults = formData.getAll('pagiSiangContainerResult[]');
+            markdown += '**Pagi s/d Siang:**\n';
+            pagiSiangUsers.forEach((user, index) => {
+                markdown += `- ${user}: ${pagiSiangResults[index]}\n`;
+            });
 
-            fetch('process.php', {
-                method: 'POST',
-                body: formData
-            })
-            .then(response => response.text())
-            .then(data => {
-                // Tampilkan hasil di bawah formulir
-                document.getElementById('outputContainer').classList.remove('hidden');
-                document.getElementById('outputText').textContent = data;
-            })
-            .catch(error => console.error('Error:', error));
-        });
+            const soreMalamUsers = formData.getAll('soreMalamContainerUser[]');
+            const soreMalamResults = formData.getAll('soreMalamContainerResult[]');
+            markdown += '\n**Sore s/d Malam:**\n';
+            soreMalamUsers.forEach((user, index) => {
+                markdown += `- ${user}: ${soreMalamResults[index]}\n`;
+            });
+
+            document.getElementById('outputContainer').classList.remove('hidden');
+            document.getElementById('outputText').textContent = markdown;
+        }
 
         // Fungsi untuk menyalin teks ke clipboard
         function copyToClipboard() {
