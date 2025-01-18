@@ -32,12 +32,20 @@
             background-color: #1d72b8;
             color: white;
         }
+        @media (max-width: 768px) {
+            .box {
+                width: 100% !important;
+            }
+            .input, .button {
+                width: 100% !important;
+            }
+        }
     </style>
 </head>
 <body class="bg-gray-100 p-2 sm:p-4">
 
     <div class="container">
-        <div class="box">
+        <div class="box" style="max-width: 640px; margin: 0 auto;">
             <h1 class="title has-text-centered">Form Hasil Realisasi MR</h1>
             <form id="mrForm">
                 <!-- Lokasi -->
@@ -237,4 +245,3 @@
         }
     </script>
 </body>
-</html>
